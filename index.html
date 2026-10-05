@@ -1,1 +1,42 @@
-<meta http-equiv="refresh" content="0;url=./api/main.py">
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#070b14"><meta name="description" content="Fixable — transparent browser diagnostics.">
+<title>Fixable — Diagnostics</title>
+<style>
+:root{color-scheme:dark;--bg:#070b14;--panel:#0d1322;--panel2:#111a2d;--text:#f5f7fb;--muted:#9aa7bd;--line:#24304a;--accent:#7dd3fc;--good:#86efac;--bad:#fca5a5}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;background:radial-gradient(circle at 20% 0%,#12203a 0,transparent 35%),var(--bg);color:var(--text)}
+body{display:flex;align-items:center;justify-content:center;padding:24px}.wrap{width:min(980px,100%)}.hero{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:18px}
+h1{font-size:clamp(32px,7vw,58px);letter-spacing:-.04em;margin:0}.sub{color:var(--muted);max-width:720px;line-height:1.6;margin:10px 0 0}.badge{white-space:nowrap;border:1px solid var(--line);padding:8px 12px;border-radius:999px;background:#0a1120;color:var(--accent);font-size:13px}
+.panel{background:linear-gradient(180deg,rgba(17,26,45,.94),rgba(9,14,25,.94));border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:0 24px 80px rgba(0,0,0,.28)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0}.card{border:1px solid var(--line);border-radius:16px;padding:16px;background:rgba(7,11,20,.45)}
+.label{font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}.value{font-size:18px;margin-top:8px;word-break:break-word}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}button{cursor:pointer;border:1px solid var(--line);background:#17233a;color:var(--text);padding:11px 15px;border-radius:12px;font:inherit}button.primary{background:#dff6ff;color:#062033;border-color:#dff6ff}button:disabled{opacity:.5;cursor:not-allowed}
+.notice{margin-top:16px;padding:14px;border-radius:14px;background:#0a1120;border:1px solid var(--line);color:var(--muted);line-height:1.5;font-size:14px}#status{margin-top:14px;min-height:22px;color:var(--muted)}.ok{color:var(--good)!important}.bad{color:var(--bad)!important}
+@media(max-width:760px){.hero{flex-direction:column}.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body><main class="wrap">
+<section class="hero"><div><h1>Fixable</h1><p class="sub">A transparent browser diagnostics page for checking the client environment and basic connection capabilities. Nothing is collected silently.</p></div><div class="badge">privacy-first</div></section>
+<section class="panel"><div class="grid">
+<div class="card"><div class="label">Browser</div><div class="value" id="browser">Detecting…</div></div>
+<div class="card"><div class="label">Platform</div><div class="value" id="platform">Detecting…</div></div>
+<div class="card"><div class="label">Language</div><div class="value" id="language">Detecting…</div></div>
+<div class="card"><div class="label">Screen</div><div class="value" id="screen">Detecting…</div></div>
+<div class="card"><div class="label">Timezone</div><div class="value" id="timezone">Detecting…</div></div>
+<div class="card"><div class="label">Connection</div><div class="value" id="connection">Detecting…</div></div>
+</div>
+<div class="notice">Fixable shows values available to a normal web page for diagnostics. It does not request precise location, fingerprint visitors, disguise a redirect, crash the browser, or forward visitor IP data to a Discord webhook.</div>
+<div class="actions"><button class="primary" id="run">Run diagnostics</button><button id="share" disabled>Copy report</button><button id="health">Check server</button></div><div id="status" role="status" aria-live="polite"></div>
+</section></main>
+<script>
+const $=id=>document.getElementById(id);
+function connectionLabel(){const c=navigator.connection||navigator.mozConnection||navigator.webkitConnection;if(!c)return"Unavailable";return[c.effectiveType,c.downlink?c.downlink+" Mbps":null,c.rtt?c.rtt+" ms RTT":null].filter(Boolean).join(" · ")||"Available"}
+function collect(){const d={browser:navigator.userAgent||"Unavailable",platform:navigator.platform||"Unavailable",language:navigator.language||"Unavailable",screen:innerWidth+"×"+innerHeight+" @ "+(devicePixelRatio||1)+"x",timezone:Intl.DateTimeFormat().resolvedOptions().timeZone||"Unavailable",connection:connectionLabel()};for(const[k,v]of Object.entries(d))$(k).textContent=v;$("share").disabled=false;return d}
+const status=(t,c="")=>{$("status").textContent=t;$("status").className=c};
+$("run").onclick=()=>{collect();status("Diagnostics completed locally.","ok")};
+$("share").onclick=async()=>{try{await navigator.clipboard.writeText(JSON.stringify(collect(),null,2));status("Report copied to clipboard.","ok")}catch{status("Clipboard access is unavailable.","bad")}};
+$("health").onclick=async()=>{status("Checking…");try{const r=await fetch("/api/health",{cache:"no-store"});const d=await r.json();status(d.status==="ok"?"Server is healthy.":"Unexpected server response.",d.status==="ok"?"ok":"bad")}catch{status("Could not reach the diagnostics API.","bad")}};
+collect();
+</script></body></html>

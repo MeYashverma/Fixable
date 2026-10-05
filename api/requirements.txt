@@ -1,2 +1,1 @@
-requests
-httpagentparser
+# No third-party runtime dependencies are required.
